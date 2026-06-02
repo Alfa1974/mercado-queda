@@ -27,7 +27,6 @@ def send_telegram(msg):
     requests.get(url, params={'chat_id': TELEGRAM_CHAT_ID, 'text': msg})
 
 def get_market_data():
-    # Liquidez M2 e Yield 10Y
     m2 = fred.get_series('M2SL')
     liquidity = float((m2.iloc[-1] - m2.iloc[-2]) / m2.iloc[-2])
     tnx = yf.download("^TNX", period="1mo", progress=False)
@@ -49,8 +48,13 @@ def get_sentiment():
 
 def check_radar(ticker, name):
     df = yf.download(ticker, period="2y", progress=False)
-    close = df['Close'].iloc[-1]
-    z_score = (close - df['Close'].rolling(200).mean().iloc[-1]) / df['Close'].rolling(200).std().iloc[-1]
+    close = float(df['Close'].iloc[-1])
+    
+    # Cálculos robustos forçados a float
+    rolling_mean = float(df['Close'].rolling(200).mean().iloc[-1])
+    rolling_std = float(df['Close'].rolling(200).std().iloc[-1])
+    z_score = (close - rolling_mean) / rolling_std
+    
     liq, y10 = get_market_data()
     risk = get_sentiment()
     
